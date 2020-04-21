@@ -1,42 +1,51 @@
-%Bozza per le 42 cartelle del disc1
-k = 1
-filepath1 = "Dataset\disc" + num2str(k);
-filepath2 = "\OAS1_000"
-filepath3 = "_MR1\OAS1_000"
-filepath4 = "_MR1.txt";
-nome1 ="RAW\OAS1_000";
-nome2 = "_MR1_mpr-";
-nome3 = "_anon_sag_66.gif";
+%Estrazione del dataset di immagini e delle labels corrispondenti
+k = 1;
 n = 1;
+u = 1;
+v = 1;
+filepath1 = "Dataset\disc" + num2str(n);
+filepath2 = "\OAS1_000";
+filepath3 = "_MR1\OAS1_000";
+filepath4 = "_MR1.txt";
 
-for i = 1:42
-    if i > 9 
-        filepath2 = "\OAS1_00";
-        filepath3 = "_MR1\OAS1_00";
-        nome1 = "RAW\OAS1_00"
-    end
-    if i > 99
-        filepath2 = "\OAS1_0";
-        filepath3 = "_MR1\OAS1_0";
-        nome1 = "RAW\OAS1_0"
-    end
-    filepath = filepath1 + filepath2 + num2str(i)+ filepath3 + num2str(i) + filepath4
-    CDR = parseSubjectStatus(filepath) %Ricavo il Clinical Dementia Rating (livello di demenza)
+i = 1;
+
+for z = 1 : numel(dir(fullfile("Dataset\","disc*"))) %Scorre i dischi
+    for j = 1 :numel(dir(fullfile(filepath1,"OAS1_*"))) %Scorre le cartelle nei dischi
     
-    img1 = nome1+num2str(i)+nome2+num2str(n)+nome3;
-    img2 = nome1+num2str(i)+nome2+num2str(n+1)+nome3;
-    img3 = nome1+num2str(i)+nome2+num2str(n+2)+nome3;
-    if CDR == 0 %Se è nullo, il paziente è sano
-        healthyIndx(i) = CDR %Salvo l'indice
-        %Salvo le risonanze in un cell array 
-        healthyImgs{i,1} ={img1,img2,img3}
-    else
-        if CDR > 0 %Se è > 0, il paziente è affetto da demenza
-        dementIndx(i) = CDR % Salvo l'indice
-        %Salvo le risonanze in un cell array 
-        dementImgs{i,1} = {img1,img2,img3}
+        if i > 9 
+            filepath2 = "\OAS1_00";
+            filepath3 = "_MR1\OAS1_00";
         end
-    end
+        if i > 99
+            filepath2 = "\OAS1_0";
+            filepath3 = "_MR1\OAS1_0";
+        end
+        %Genero il path del file di testo
+        filepath = filepath1 + filepath2 + num2str(i)+ filepath3 + num2str(i) + filepath4;
+        R = filepath1 + filepath2 + num2str(i) + "_MR1\RAW"; %Path della cartella RAW
+        S = dir(fullfile(R,'*.gif'));
+        CDR = parseSubjectStatus(filepath); %Ricavo il Clinical Dementia Rating (livello di demenza)
+        if CDR == 0 %Se Ã¨ nullo, il paziente Ã¨ sano
+            healthyIndx(u) = CDR; %Salvo l'indice
+            %Salvo le immagini in un cell array   
+            for k = 1: numel(S)
+                healthyImgs{u,k} = fullfile(R,S(k).name);
+            end
+            u=u+1;
+
+        elseif CDR > 0 %Se Ã¨ > 0, il paziente Ã¨ affetto da demenza
+            dementIndx(v) = CDR; % Salvo l'indice
+            %Salvo le immagini in un cell array 
+            for k = 1: numel(S)
+                dementImgs{v,k} = fullfile(R,S(k).name);
+            end
+            v = v+1;
+        end     
+    i = i+1;
+    end   
+    n = n+1;
+    filepath1 = "Dataset\disc" + num2str(n)
 end
 
 
