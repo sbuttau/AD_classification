@@ -1,4 +1,5 @@
 
+
 %-----------------------  Gestione dataset --------------------------
 %Estrazione del dataset di immagini e delle labels corrispondenti
 k = 1;
@@ -28,7 +29,7 @@ for z = 1 : numel(dir(fullfile("Dataset\","disc*"))) %Scorre i dischi
         S = dir(fullfile(R,'*.gif'));
         array = strings(1,numel(S)); %Inizializzo l'array
         CDR = parseSubjectStatus(filepath); %Ricavo il Clinical Dementia Rating (livello di demenza)
-          if CDR == 0 %Se Ë nullo, il paziente Ë sano
+          if CDR == 0 %Se √® nullo, il paziente √® sano
               healthyIndx(u) = CDR; %Salvo l'indice
               %Salvo le immagini in un cell array   
               for k = 1: numel(S)
@@ -37,7 +38,7 @@ for z = 1 : numel(dir(fullfile("Dataset\","disc*"))) %Scorre i dischi
               healthyImgs{u} = array;
               u=u+1;
           end
-        if CDR > 0 %Se Ë > 0, il paziente Ë affetto da demenza
+        if CDR > 0 %Se √® > 0, il paziente √® affetto da demenza
             
             dementIndx(v) = CDR; % Salvo l'indice
             %Salvo le immagini in un cell array 
@@ -88,7 +89,8 @@ ds = shuffle(ds);
 
 % Divisione tra training set(80%),validation set (10%) e test set (10%)
 [trainImgs,valSet,testImgs] = splitEachLabel(ds,0.8,0.1,0.1,'randomized');
-% Viene applicata l'augmentation al training set per aumentare la diversit‡
+testImgs.ReadFcn = @(filename)gray2rgb_resize(filename); %Vengono ridimensionate le immagini del test
+% Viene applicata l'augmentation al training set per aumentare la diversit√†
 % all'interno del dataset
 imageAugmenter = imageDataAugmenter("RandRotation",[-35 35],"RandXScale",[0.5 4],"RandYScale",[0.5 1]);
 trainAug = augmentedImageDatastore([227 227],trainImgs,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
@@ -102,11 +104,11 @@ layers(end - 2) = fullyConnectedLayer(2); % Classificazione binaria
 layers(end) = classificationLayer();
 
 % Vengono settate le training options
-options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"InitialLearnRate",0.0001,"MaxEpochs",100,"ValidationFrequency",30);
+options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"InitialLearnRate",0.0001,"MaxEpochs",300,"ValidationFrequency",30);
 
 % -------------------    Train Network    -------------------------------
 trainedNet = trainNetwork(trainAug,layers,options);
-preds = classify(trainedNet, testAug);
+preds = classify(trainedNet, testImgs);
 accuracy = nnz(preds == testImgs.Labels)/numel(preds)
 
 %Confusion Chart
