@@ -1,19 +1,27 @@
+% MULTICLASS CLASSIFICATION - (healthy, very mild dementia, mild dementia,
+% moderate dementia)
+
 %-----------------------  Gestione dataset --------------------------
-%Estrazione del dataset di immagini e delle labels corrispondenti
+%Inizializzazione variabili
 k = 1;
 n = 1;
 u = 1;
 v = 1;
+q = 1;
+healthyLabels =[];
+dementLabels = [];
 filepath1 = "Dataset\disc" + num2str(n);
 filepath2 = "\OAS1_000";
 filepath3 = "_MR1\OAS1_000";
 filepath4 = "_MR1.txt";
 i = 1;
 
+%Estrazione del dataset di immagini e delle labels corrispondenti
+
 for z = 1 : numel(dir(fullfile("Dataset\","disc*"))) %Scorre i dischi
     for j = 1 :numel(dir(fullfile(filepath1,"OAS1_*"))) %Scorre le cartelle nei dischi
-    
-        if i > 9 
+        
+        if i > 9
             filepath2 = "\OAS1_00";
             filepath3 = "_MR1\OAS1_00";
         end
@@ -27,54 +35,58 @@ for z = 1 : numel(dir(fullfile("Dataset\","disc*"))) %Scorre i dischi
         S = dir(fullfile(R,'*.gif'));
         array = strings(1,numel(S)); %Inizializzo l'array
         CDR = parseSubjectStatus(filepath); %Ricavo il Clinical Dementia Rating (livello di demenza)
-          if CDR == 0 %Se è nullo, il paziente è sano
-              healthyIndx(u) = CDR; %Salvo l'indice
-              %Salvo le immagini in un cell array   
-              for k = 1: numel(S)
-                 array(k) = fullfile(R,S(k).name);
-              end
-              healthyImgs{u} = array;
-              u=u+1;
-          end
-        if CDR > 0 %Se è > 0, il paziente è affetto da demenza
-            
-            dementIndx(v) = CDR; % Salvo l'indice
-            %Salvo le immagini in un cell array 
+        if CDR == 0 %Se è nullo, il paziente è sano
+            healthyIndx(u) = CDR; %Salvo l'indice
+            %Salvo le immagini e le relative etichette
             for k = 1: numel(S)
-                array(k) = fullfile(R,S(k).name);  
+                array(k) = fullfile(R,S(k).name);
+                healthyLabels = [healthyLabels "healthy"];
+            end
+            healthyImgs{u} = array;
+            u=u+1;
+            
+        end
+        
+        if CDR > 0 %Se >0, il paziente è affetto da demenza
+            dementIndx(v) = CDR; % Salvo l'indice
+            %Salvo le immagini in un cell array
+            for k = 1: numel(S)
+                array(k) = fullfile(R,S(k).name);
+                %Classificazione etichette
+                if CDR == 1
+                    dementLabels = [dementLabels "mild dementia"];
+                else
+                    if CDR == 2
+                        dementLabels = [dementLabels "moderate dementia"];
+                    end
+                end
+                
             end
             dementImgs{v} = array;
             v = v+1;
-        end     
-    i = i+1;
-    end   
+        end
+        
+        
+        i = i+1;
+    end
     n = n+1;
     filepath1 = "Dataset\disc" + num2str(n);
 end
 
-% Conversione del cell array dementImgs ad array di stringhe per la
-% creazione del datastore e creazione delle etichette
-dementStrings = [];
-dementLabels = [];
-for i = 1:size(dementImgs, 2)
-    dementStrings = [dementStrings dementImgs{i}];
-end
-for i = 1:size(dementStrings,2)
-    dementLabels = [dementLabels "dementia"];
-end
-dementLabels = categorical(dementLabels);
 % Conversione del cell array healthyImgs ad array di stringhe per la
-% creazione del datastore e creazione delle etichette
+% creazione del datastore
 healthyStrings = [];
-healthyLabels = [];
 for i = 1:size(healthyImgs, 2)
     healthyStrings = [healthyStrings healthyImgs{i}];
 end
-for i = 1:size(healthyStrings,2)
-    healthyLabels = [healthyLabels "healthy"];
-end
 healthyLabels = categorical(healthyLabels);
-
+% Conversione del cell array dementImgs ad array di stringhe per la
+% creazione del datastore 
+dementStrings = [];
+for i = 1:size(dementImgs, 2)
+    dementStrings = [dementStrings dementImgs{i}];
+end
+dementLabels = categorical(dementLabels);
 % ------------------   Creazione del datastore   -----------------------
 healthyDs = imageDatastore(healthyStrings); %Datastore dei cervelli "sani"
 healthyDs.Labels = healthyLabels; %Etichetta della classe "healthy"
@@ -83,7 +95,6 @@ dementDs.Labels = dementLabels; %Etichetta della classe "dementia"
 ds = imageDatastore(cat(1,healthyDs.Files,dementDs.Files));
 ds.Labels = cat(1,healthyDs.Labels,dementDs.Labels);
 ds = shuffle(ds);
-%ds = combine(healthyDs,dementDs); %Datastore combinato
 
 % Divisione tra training set(80%),validation set (10%) e test set (10%)
 [trainImgs,valSet,testImgs] = splitEachLabel(ds,0.8,0.1,0.1,'randomized');
@@ -98,12 +109,13 @@ valAug = augmentedImageDatastore([299 299],valSet,"ColorPreprocessing","gray2rgb
 net = inceptionresnetv2;
 layers = layerGraph(net);
 % % Modifico il terzultimo e l'ultimo strato della rete
-newFCLayer = fullyConnectedLayer(2,'Name','new_fc'); % Classificazione binaria
+newFCLayer = fullyConnectedLayer(3,'Name','new_fc'); % Classificazione binaria
 layers = replaceLayer(layers,'predictions',newFCLayer);
 newCLLayer = classificationLayer('Name','new_output');
 layers = replaceLayer(layers,'ClassificationLayer_predictions',newCLLayer);
+
 % Vengono settate le training options
-options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"MiniBatchSize",10,"InitialLearnRate",0.0001,"MaxEpochs",200,"ValidationFrequency",30);
+options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"InitialLearnRate",0.0001,"MaxEpochs",200,"MiniBatchSize",10,"ValidationFrequency",30);
 
 % -------------------    Train Network    -------------------------------
 trainedNet = trainNetwork(trainAug,layers,options);
@@ -112,3 +124,5 @@ accuracy = nnz(preds == testImgs.Labels)/numel(preds)
 
 %Confusion Chart
 confusionchart(preds,testImgs.Labels)
+
+
