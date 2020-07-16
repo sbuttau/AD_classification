@@ -55,13 +55,13 @@ layers = replaceLayer(layers,'ClassificationLayer_predictions',newCLLayer);
 
 
 % Vengono settate le training options
-options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"InitialLearnRate",0.0001,"MaxEpochs",200,"ValidationFrequency",30,"MiniBatchSize",10);
+options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"InitialLearnRate",0.0001,"MaxEpochs",30,"ValidationFrequency",30,"MiniBatchSize",10);
 % -------------------    Train Network    -------------------------------
 trainedNet = trainNetwork(trainAug,layers,options);
 preds = classify(trainedNet, testImgs);
 accuracy = nnz(preds == testImgs.Labels)/numel(preds)
 
 %Confusion Chart
-confusionchart(preds,testImgs.Labels)
+chart = confusionchart(preds,testImgs.Labels)
 
 
