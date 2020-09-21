@@ -49,7 +49,7 @@ else
   filepath2_tris = "/OAS1_0";
   filepath3_tris = "_MR1/OAS1_0";
 
-  folder = "_MR1\RAW";
+  folder = "_MR1/RAW";
   folder1 = "_MR1/PROCESSED/MPRAGE/T88_111";
 
   models_folder = "models/";
