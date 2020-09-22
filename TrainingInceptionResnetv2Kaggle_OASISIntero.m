@@ -80,7 +80,6 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
         S1 = dir(fullfile(R1,'*masked_gfc_tra_90.gif'));
         array = strings(1,numel(S)+1); %Inizializzo l'array
         CDR = parseSubjectStatus(filepath); %Ricavo il Clinical Dementia Rating (livello di demenza)
-        disp(CDR)
         if CDR == 0 %Se è nullo, il paziente è sano
             healthyIndx(u) = CDR; %Salvo l'indice
             %Salvo le immagini e le relative etichette
