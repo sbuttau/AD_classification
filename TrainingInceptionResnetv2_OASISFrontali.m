@@ -8,11 +8,12 @@ n = 1;
 u = 1;
 v = 1;
 q = 1;
+i = 1;
 healthyLabels =[];
 dementLabels = [];
 
 augSize = 299;
-classNumber = 3;
+classNumber = 4;
 
 %Controllo path locali - server
 if ispc
@@ -35,7 +36,7 @@ if ispc
 else
 
   datasetpath = "/home/server/MATLAB/dataset/OASIS/";
-  filepath1_baseline = "Dataset/disc";
+  filepath1_baseline = "/home/server/MATLAB/dataset/OASIS/disc";
   filepath1 = "/home/server/MATLAB/dataset/OASIS/disc" + num2str(n);
   filepath2 = "/OAS1_000";
   filepath3 = "_MR1/OAS1_000";
@@ -53,7 +54,6 @@ else
   model_name = "inceptionresnetv2_oasis_front_70ep_10minibatch";
 end
 
-i = 1;
 
 %Estrazione del dataset di immagini e delle labels corrispondenti
 
