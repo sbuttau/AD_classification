@@ -7,6 +7,7 @@ n = 1;
 u = 1;
 v = 1;
 q = 1;
+i = 1;
 healthyLabels =[];
 dementLabels = [];
 
@@ -28,16 +29,14 @@ if ispc
 
   filepath2_tris = "\OAS1_0";
   filepath3_tris = "_MR1\OAS1_0";
-  
+
   folder = "_MR1\RAW";
   folder1 = "_MR1\PROCESSED\MPRAGE\T88_111";
-  
-  
 
 else
 
   datasetpath = "/home/server/MATLAB/dataset/OASIS/";
-  filepath1_baseline = "Dataset/disc";
+  filepath1_baseline = "/home/server/MATLAB/dataset/OASIS/disc";
   filepath1 = "/home/server/MATLAB/dataset/OASIS/disc" + num2str(n);
   filepath2 = "/OAS1_000";
   filepath3 = "_MR1/OAS1_000";
@@ -53,10 +52,11 @@ else
   folder1 = "_MR1/PROCESSED/MPRAGE/T88_111";
 
   models_folder = "models/";
-  model_name = "inceptionresnetv2_oasis_front_70ep_10minibatch";
+  model_name = "inceptionresnetv2_kaggle-on-oasis_100ep_8minibatch";
+  
+  kaggleNet = load("models/kaggle_inceptionresnetv2_v2_100epochs_10minibatch.mat"); 
+  kaggleNet = kaggleNet.trainedNet;
 end
-
-i = 1;
 
 %Estrazione del dataset di immagini e delle labels corrispondenti
 
@@ -73,21 +73,22 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
         end
 
         %Genero il path del file di testo
-        filepath = filepath1 + filepath2 + num2str(i)+ filepath3 + num2str(i) + filepath4;
+        filepath = filepath1 + filepath2 + num2str(i)+ filepath3 + num2str(i) + filepath4
         R = filepath1 + filepath2 + num2str(i) + folder; %Path della cartella RAW
         R1 = filepath1 + filepath2 + num2str(i) + folder1; %Path della cartella per le immagini frontali
         S = dir(fullfile(R,'*.gif'));
         S1 = dir(fullfile(R1,'*masked_gfc_tra_90.gif'));
         array = strings(1,numel(S)+1); %Inizializzo l'array
         CDR = parseSubjectStatus(filepath); %Ricavo il Clinical Dementia Rating (livello di demenza)
+        disp(CDR)
         if CDR == 0 %Se è nullo, il paziente è sano
             healthyIndx(u) = CDR; %Salvo l'indice
             %Salvo le immagini e le relative etichette
-            for k = 1: (numel(S)+1)                
+            for k = 1: (numel(S)+1)
                 if k == (numel(S)+1)
                     array(k) = fullfile(R1,S1(1).name);
                 else
-                array(k) = fullfile(R,S(k).name);
+                    array(k) = fullfile(R,S(k).name);
                 end
                 healthyLabels = [healthyLabels "healthy"];
             end
@@ -101,12 +102,12 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
             %Salvo le immagini in un cell array
             for k = 1: (numel(S)+1)
                 if k == (numel(S)+1)
-                    array(k) = fullfile(R1,S1(1).name);                
+                    array(k) = fullfile(R1,S1(1).name);
                 else
                     array(k) = fullfile(R,S(k).name);
                 end
                 %Classificazione etichette
-                if CDR == 0.5 
+                if CDR == 0.5
                     dementLabels = [dementLabels "very mild dementia"];
                 else
                     if CDR == 1
@@ -117,14 +118,11 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
                         end
                     end
                 end
-                
+
             end
             dementImgs{v} = array;
             v = v+1;
         end
-        
-
-
         i = i+1;
     end
     n = n+1;
@@ -164,10 +162,10 @@ trainAug = augmentedImageDatastore([augSize augSize],trainImgs,"ColorPreprocessi
 valAug = augmentedImageDatastore([augSize augSize],valSet,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
 
 % ------------------   Creazione della rete   --------------------------
-net = trainedNet;
+net = kaggleNet;
 layers = layerGraph(net);
 % % Modifico il terzultimo e l'ultimo strato della rete
-newFCLayer = fullyConnectedLayer(classNumber,'Name','new_fc'); 
+newFCLayer = fullyConnectedLayer(classNumber,'Name','new_fc');
 layers = replaceLayer(layers,'new_fc',newFCLayer);
 newCLLayer = classificationLayer('Name','new_output');
 layers = replaceLayer(layers,'new_output',newCLLayer);
@@ -184,4 +182,3 @@ accuracy = nnz(preds == testImgs.Labels)/numel(preds)
 
 %Confusion Chart
 chart = confusionchart(preds,testImgs.Labels)
-
