@@ -54,7 +54,7 @@ else
   filepath2_tris = "/OAS1_0";
   filepath3_tris = "_MR1/OAS1_0";
 
-  folder = "_MR1\RAW";
+  folder = "_MR1/RAW";
 
   models_folder = "models/";
   model_name = "alexnetkaggle_binary_oasis_300ep_128mbs";
@@ -114,12 +114,18 @@ healthyStrings = [];
 for i = 1:size(healthyImgs, 2)
     healthyStrings = [healthyStrings healthyImgs{i}];
 end
+for i = 1:size(healthyStrings,2)
+    healthyLabels = [healthyLabels "healthy"];
+end
 healthyLabels = categorical(healthyLabels);
 % Conversione del cell array dementImgs ad array di stringhe per la
 % creazione del datastore 
 dementStrings = [];
 for i = 1:size(dementImgs, 2)
     dementStrings = [dementStrings dementImgs{i}];
+end
+for i = 1:size(dementStrings,2)
+    dementLabels = [dementLabels "dementia"];
 end
 dementLabels = categorical(dementLabels);
 

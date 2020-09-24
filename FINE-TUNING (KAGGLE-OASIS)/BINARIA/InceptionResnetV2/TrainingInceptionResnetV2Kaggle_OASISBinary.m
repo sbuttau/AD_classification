@@ -1,6 +1,6 @@
 % BINARY CLASSIFICATION - (healthy, dementia)
 % IMMAGINI LATERALI
-% FINE-TUNING SU OASIS - RESNET101 PRE-TRAINED SU KAGGLE DATASET
+% FINE-TUNING SU OASIS - INCEPTION RESNET V2 PRE-TRAINED SU KAGGLE DATASET
 
 %-----------------------  Gestione dataset --------------------------
 %Inizializzazione variabili
@@ -14,7 +14,7 @@ i = 1;
 healthyLabels =[];
 dementLabels = [];
 
-augSize = 224;
+augSize = 299;
 classNumber = 2;
 
 %Controllo path locali - server
@@ -36,8 +36,8 @@ if ispc
   folder = "_MR1\RAW";
   
   
-  models_folder = "Mixed/Binary/Resnet101";
-  model_name = "resnet101kaggle_binary_oasis_300ep_10mbs";
+  models_folder = "Mixed/Binary/InceptionResnetV2";
+  model_name = "inceptionresnetv2kaggle_binary_oasis_200ep_10mbs";
 
 else
 
@@ -57,7 +57,7 @@ else
   folder = "_MR1/RAW";
 
   models_folder = "models/";
-  model_name = "resnet101kaggle_binary_oasis_300ep_10mbs";
+  model_name = "inceptionresnetv2kaggle_binary_oasis_200ep_10mbs";
 end
 
 
@@ -148,22 +148,22 @@ trainAug = augmentedImageDatastore([augSize augSize],trainImgs,"ColorPreprocessi
 valAug = augmentedImageDatastore([augSize augSize],valSet,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
 
 % ------------------   Creazione della rete   --------------------------
-net = trainedNet;
-layers = layerGraph(net);
-% % Modifico il terzultimo e l'ultimo strato della rete
-newFCLayer = fullyConnectedLayer(classNumber,'Name','new_fc'); % Classificazione binaria
-layers = replaceLayer(layers,'new_fc',newFCLayer);
-newCLLayer = classificationLayer('Name','new_output');
-layers = replaceLayer(layers,'new_output',newCLLayer);
-
-% Vengono settate le training options
-options = trainingOptions('sgdm',"Plots","training-progress","ValidationData",valAug,"MiniBatchSize",10,"InitialLearnRate",0.0001,"MaxEpochs",300,"ValidationFrequency",30);
-
-% -------------------    Train Network    -------------------------------
-trainedNet = trainNetwork(trainAug,layers,options);
-save(fullfile(models_folder, model_name), "trainedNet");
+% net = trainedNet;
+% layers = layerGraph(net);
+% % % Modifico il terzultimo e l'ultimo strato della rete
+% newFCLayer = fullyConnectedLayer(classNumber,'Name','new_fc'); 
+% layers = replaceLayer(layers,'new_fc',newFCLayer);
+% newCLLayer = classificationLayer('Name','new_output');
+% layers = replaceLayer(layers,'new_output',newCLLayer);
+% 
+% % Vengono settate le training options
+% options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"MiniBatchSize",10,"InitialLearnRate",0.0001,"MaxEpochs",200,"ValidationFrequency",30);
+% 
+% % -------------------    Train Network    -------------------------------
+% trainedNet = trainNetwork(trainAug,layers,options);
+% save(fullfile(models_folder, model_name), "trainedNet");
 preds = classify(trainedNet, testImgs);
 accuracy = nnz(preds == testImgs.Labels)/numel(preds)
 
 %Confusion Chart
-chart = confusionchart(preds,testImgs.Labels)
+chart =confusionchart(preds,testImgs.Labels)
