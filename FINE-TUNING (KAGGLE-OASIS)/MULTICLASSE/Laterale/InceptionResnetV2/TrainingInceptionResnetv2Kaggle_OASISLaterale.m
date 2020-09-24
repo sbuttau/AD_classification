@@ -1,8 +1,6 @@
-% MULTICLASS CLASSIFICATION - (healthy, very mild dementia, mild dementia, 
+% MULTICLASS CLASSIFICATION - (healthy, very mild dementia, mild dementia,
 % moderate dementia)
-% IMMAGINI LATERALI OASIS
-% FINE-TUNING SU OASIS - INCEPTION RESNET V2 PRE-TRAINED SU KAGGLE DATASET
-
+% Laterali - Modello Inception Resnet v2 pre-trained su kaggle
 %-----------------------  Gestione dataset --------------------------
 %Inizializzazione variabili
 k = 1;
@@ -36,8 +34,7 @@ if ispc
 
   folder = "_MR1\RAW";
   
-  models_folder = "Mixed/Laterale/InceptionResnetV2";
-  model_name = "inceptionresnetv2kaggle_laterale_oasis_200ep_10mbs";
+  kaggleNet = trainedNet;
 
 else
 
@@ -54,10 +51,13 @@ else
   filepath2_tris = "/OAS1_0";
   filepath3_tris = "_MR1/OAS1_0";
 
-  folder = "_MR1\RAW";
+  folder = "_MR1/RAW";
 
   models_folder = "models/";
   model_name = "inceptionresnetv2kaggle_oasis_laterale_200ep_10minibatch";
+  
+  kaggleNet = load("models/kaggle_inceptionresnetv2_v2_100epochs_10minibatch.mat"); 
+  kaggleNet = kaggleNet.trainedNet;
 end
 
 
@@ -81,7 +81,7 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
         S = dir(fullfile(R,'*.gif'));
         array = strings(1,numel(S)); %Inizializzo l'array
         CDR = parseSubjectStatus(filepath); %Ricavo il Clinical Dementia Rating (livello di demenza)
-        if CDR == 0 %Se è nullo, il paziente è sano
+        if CDR == 0 %Se Ã¨ nullo, il paziente Ã¨ sano
             healthyIndx(u) = CDR; %Salvo l'indice
             %Salvo le immagini e le relative etichette
             for k = 1: numel(S)
@@ -93,7 +93,7 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
 
         end
 
-        if CDR > 0 %Se >0, il paziente è affetto da demenza
+        if CDR > 0 %Se >0, il paziente Ã¨ affetto da demenza
             dementIndx(v) = CDR; % Salvo l'indice
             %Salvo le immagini in un cell array
             for k = 1: numel(S)
@@ -136,44 +136,3 @@ for i = 1:size(dementImgs, 2)
     dementStrings = [dementStrings dementImgs{i}];
 end
 dementLabels = categorical(dementLabels);
-
-% ------------------   Creazione del datastore   -----------------------
-healthyDs = imageDatastore(healthyStrings); %Datastore dei cervelli "sani"
-healthyDs.Labels = healthyLabels; %Etichetta della classe "healthy"
-dementDs = imageDatastore(dementStrings); %Datastore dei cervelli con demenza
-dementDs.Labels = dementLabels; %Etichetta della classe "dementia"
-ds = imageDatastore(cat(1,healthyDs.Files,dementDs.Files));
-ds.Labels = cat(1,healthyDs.Labels,dementDs.Labels);
-ds = shuffle(ds);
-
-% Divisione tra training set(80%),validation set (10%) e test set (10%)
-[trainImgs,valSet,testImgs] = splitEachLabel(ds,0.8,0.1,0.1,'randomized');
-testImgs.ReadFcn = @(filename)gray2rgb_resize(filename,augSize); %Vengono ridimensionate le immagini del test
-% Viene applicata l'augmentation al training set per aumentare la diversità
-% all'interno del dataset
-imageAugmenter = imageDataAugmenter("RandRotation",[-35 35],"RandXScale",[0.5 4],"RandYScale",[0.5 1]);
-trainAug = augmentedImageDatastore([augSize augSize],trainImgs,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
-valAug = augmentedImageDatastore([augSize augSize],valSet,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
-
-% ------------------   Creazione della rete   --------------------------
-net = trainedNet;
-layers = layerGraph(net);
-% % Modifico il terzultimo e l'ultimo strato della rete
-newFCLayer = fullyConnectedLayer(classNumber,'Name','new_fc'); 
-layers = replaceLayer(layers,'new_fc',newFCLayer);
-newCLLayer = classificationLayer('Name','new_output');
-layers = replaceLayer(layers,'new_output',newCLLayer);
-
-% Vengono settate le training options
-options = trainingOptions('adam',"Plots","training-progress","ValidationData",valAug,"InitialLearnRate",0.0001,"MaxEpochs",1,"MiniBatchSize",10,"ValidationFrequency",30);
-
-% -------------------    Train Network    -------------------------------
-trainedNet = trainNetwork(trainAug,layers,options);
-save(fullfile(models_folder, model_name), "trainedNet");
-preds = classify(trainedNet, testImgs);
-accuracy = nnz(preds == testImgs.Labels)/numel(preds)
-
-%Confusion Chart
-chart = confusionchart(preds,testImgs.Labels)
-
-

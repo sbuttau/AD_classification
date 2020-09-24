@@ -17,7 +17,7 @@ if ispc
     models_folder = "Results/Alexnet";
     model_name = "alexnet_kaggle_200ep_128mbs";
 else
-    filepath1 = "/home/server/MATLAB/dataset/Alzheimer-MRI-dataset/Alzheimer_s Dataset\all image";
+    filepath1 = "/home/server/MATLAB/dataset/Alzheimer-MRI-dataset/all_image";
     models_folder = "models/";
     model_name = "alexnet_kaggle_200ep_128mbs";
 end
@@ -29,7 +29,7 @@ for i = 1: numel(S)
                brainLabels(i) = "very mild dementia";
     else
         if(contains(S(i).name,"nonDem"))
-           brainLabels(i) = "non dementia";        
+           brainLabels(i) = "non dementia";
         else
             if(contains(S(i).name,"mildDem"))
         brainLabels(i) = "mild dementia";
@@ -43,14 +43,14 @@ for i = 1: numel(S)
 end
 
 % ------------------   Creazione del datastore   -----------------------
-brainImgsDs = imageDatastore(brainImgs); % Datastore 
+brainImgsDs = imageDatastore(brainImgs); % Datastore
 brainLabels = categorical(brainLabels);
 brainImgsDs.Labels = brainLabels; % Etichette del datastore
 
 % Divisione tra training set(80%),validation set (10%) e test set (10%)
 [trainImgs,valSet,testImgs] = splitEachLabel(brainImgsDs,0.8,0.1,0.1,'randomized');
 testImgs.ReadFcn = @(filename)gray2rgb_resize(filename,augSize);  %Vengono ridimensionate le immagini del test
-% Viene applicata l'augmentation al training set per aumentare la diversit‡
+% Viene applicata l'augmentation al training set per aumentare la diversit√†
 % all'interno del dataset
 imageAugmenter = imageDataAugmenter("RandRotation",[-35 35],"RandXScale",[0.5 4],"RandYScale",[0.5 1]);
 trainAug = augmentedImageDatastore([augSize augSize],trainImgs,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
@@ -75,5 +75,3 @@ accuracy = nnz(preds == testImgs.Labels)/numel(preds)
 
 %Confusion Chart
 chart = confusionchart(preds,testImgs.Labels)
-
-

@@ -17,7 +17,7 @@ if ispc
     models_folder = "Results/InceptionResnetV2";
     model_name = "inceptionresnetv2_kaggle_30ep_10mbs";
 else
-    filepath1 = "/home/server/MATLAB/dataset/Alzheimer-MRI-dataset/Alzheimer_s Dataset\all image";
+    filepath1 = "/home/server/MATLAB/dataset/Alzheimer-MRI-dataset/all_image";
     models_folder = "models/";
     model_name = "inceptionresnetv2_kaggle_30ep_10mbs";
 end

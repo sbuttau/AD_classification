@@ -1,8 +1,7 @@
 % MULTICLASS CLASSIFICATION - (healthy, very mild dementia, mild dementia,
-% moderate dementia)
-% IMMAGINI FRONTALI
-% FINE-TUNING SU OASIS - INCEPTION RESNET V2 PRE-TRAINED SU KAGGLE
-
+% moderate dementia, rete: InceptionResnet V2)
+% IMMAGINI FRONTALI, FINE TUNING DELLA RETE INCEPTION RESNET V2 PRE-ADDESTRATA
+% SUL DATASET DI KAGGLE
 %-----------------------  Gestione dataset --------------------------
 %Inizializzazione variabili
 k = 1;
@@ -35,10 +34,8 @@ if ispc
   filepath3_tris = "_MR1\OAS1_0";
 
   folder = "_MR1\PROCESSED\MPRAGE\T88_111";
-  
-  models_folder = "Multiclasse/Frontale/InceptionResnetV2/";
-  model_name = "inceptionresnetv2kaggle_oasis_front_70ep_10mbs";
-  
+
+  kaggleNet = trainedNet;
 
 else
 
@@ -59,6 +56,9 @@ else
 
   models_folder = "models/";
   model_name = "inceptionresnetv2kaggle_oasis_front_70ep_10minibatch";
+
+  kaggleNet = load("models/kaggle_inceptionresnetv2_v2_100epochs_10minibatch.mat");
+  kaggleNet = kaggleNet.trainedNet;
 end
 
 
@@ -82,7 +82,7 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
         S = dir(fullfile(R,'*masked_gfc_tra_90.gif'));
         array = strings(1,numel(S)); %Inizializzo l'array
         CDR = parseSubjectStatus(filepath); %Ricavo il Clinical Dementia Rating (livello di demenza)
-        if CDR == 0 %Se Ë nullo, il paziente Ë sano
+        if CDR == 0 %Se √® nullo, il paziente √® sano
             healthyIndx(u) = CDR; %Salvo l'indice
             %Salvo le immagini e le relative etichette
             for k = 1: numel(S)
@@ -94,7 +94,7 @@ for z = 1 : numel(dir(fullfile(datasetpath, "disc*"))) %Scorre i dischi
 
         end
 
-        if CDR > 0 %Se >0, il paziente Ë affetto da demenza
+        if CDR > 0 %Se >0, il paziente √® affetto da demenza
             dementIndx(v) = CDR; % Salvo l'indice
             %Salvo le immagini in un cell array
             for k = 1: numel(S)
@@ -147,21 +147,20 @@ dementDs.Labels = dementLabels; %Etichetta della classe "dementia"
 ds = imageDatastore(cat(1,healthyDs.Files,dementDs.Files));
 ds.Labels = cat(1,healthyDs.Labels,dementDs.Labels);
 ds = shuffle(ds);
-
 % Divisione tra training set(80%),validation set (10%) e test set (10%)
 [trainImgs,valSet,testImgs] = splitEachLabel(ds,0.8,0.1,0.1,'randomized');
 testImgs.ReadFcn = @(filename)gray2rgb_resize(filename, augSize); %Vengono ridimensionate le immagini del test
-% Viene applicata l'augmentation al training set per aumentare la diversit‡
+% Viene applicata l'augmentation al training set per aumentare la diversit√†
 % all'interno del dataset
 imageAugmenter = imageDataAugmenter("RandRotation",[-35 35],"RandXScale",[0.5 4],"RandYScale",[0.5 1]);
 trainAug = augmentedImageDatastore([augSize augSize],trainImgs,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
 valAug = augmentedImageDatastore([augSize augSize],valSet,"ColorPreprocessing","gray2rgb","DataAugmentation",imageAugmenter);
 
 % ------------------   Creazione della rete   --------------------------
-net = trainedNet;
+net = kaggleNet;
 layers = layerGraph(net);
 % % Modifico il terzultimo e l'ultimo strato della rete
-newFCLayer = fullyConnectedLayer(classNumber,'Name','new_fc'); 
+newFCLayer = fullyConnectedLayer(classNumber,'Name','new_fc');
 layers = replaceLayer(layers,'new_fc',newFCLayer);
 newCLLayer = classificationLayer('Name','new_output');
 layers = replaceLayer(layers,'new_output',newCLLayer);
