@@ -1,2 +1,2 @@
-
-*.mat
+ADNI_DATASET/Binaria/models/*
+!*chart.mat
