@@ -4,12 +4,15 @@
 
 1. [Overview](#overview)
 2. [Key Features/Technologies](#key-featurestechnologies)
-3. [Datasets] (#datasets)
+3. [Datasets](#datasets)
 4. [Contributors](#contributors)
 
 ## Overview
-![Example Output 1](./brain eng.jpg)
 
+  ![Example Output 2](./nonDem.jpg)
+  ![Example Output 2](./mildDem.jpg)
+  ![Example Output 2](./moderateDem.jpg)
+  
 This project focuses on the task of image classification to diagnose Alzheimer's and dementia from medical MRIs. It involves a binary and a multiclass classification, with corresponding labels:
 
 Binary:
@@ -36,11 +39,6 @@ Multiclass:
 - OASIS (https://www.oasis-brains.org/)
 - Alzheimer-MRI-dataset (https://www.kaggle.com/datasets/legendahmed/alzheimermridataset/metadata)
 - ADNI (https://adni.loni.usc.edu/)
-
-  ![Example Output 2](./nonDem.jpg)
-  ![Example Output 2](./mildDem.jpg)
-  ![Example Output 2](./moderateDem.jpg)
-
   
 ## Contributors
 
